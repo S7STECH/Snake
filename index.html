@@ -2,12 +2,14 @@
 <html lang="ar">
 <head>
 <meta charset="UTF-8">
-<title>GAME SNAKE</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>SNAKE NEON</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600&display=swap" rel="stylesheet">
 
 <style>
 body {
+    margin:0;
     display:flex;
     flex-direction:column;
     align-items:center;
@@ -15,155 +17,64 @@ body {
     height:100vh;
     background:#0a0a0a;
     overflow:hidden;
+    touch-action:none;
 }
 
 h1 {
     font-family:'Orbitron',sans-serif;
-    font-size:50px;
     color:#00ffe5;
     text-shadow:0 0 20px #00ffe5;
 }
 
-.score,.highscore,.level {
-    color:#fff;
-    font-size:18px;
-}
-
 canvas {
+    border:5px solid #00ffe5;
+    box-shadow:0 0 20px #00ffe5;
     background:#9bbc0f;
-    border:6px solid #00ffe5;
-    box-shadow:0 0 25px #00ffe5;
-}
-
-.top-controls {
-    margin:10px 0;
-    display:flex;
-    gap:10px;
-}
-
-.top-controls button {
-    width:140px;
-    height:45px;
-    border:none;
-    border-radius:12px;
-    background:#111;
-    color:#00ffe5;
-    box-shadow:0 0 12px #00ffe5;
-    font-weight:bold;
 }
 
 /* الأسهم */
 .controls {
-    margin-top:20px;
+    margin-top:15px;
     display:grid;
-    grid-template-columns:90px 90px 90px;
-    gap:10px;
+    grid-template-columns:80px 80px 80px;
+    gap:8px;
 }
 
 .controls button {
-    height:85px;
-    font-size:28px;
-    border-radius:15px;
+    height:70px;
+    font-size:22px;
+    border-radius:12px;
     border:2px solid #00ffe5;
     background:#111;
     color:#00ffe5;
-    box-shadow:0 0 12px #00ffe5;
     touch-action:manipulation;
 }
 
-/* 🔥 Game Over نيون احترافي */
+/* Game Over */
 .gameover {
     position:fixed;
-    top:0;
-    left:0;
-    width:100%;
-    height:100%;
+    top:0;left:0;
+    width:100%;height:100%;
     background:rgba(0,0,0,0.9);
     display:none;
-    flex-direction:column;
     align-items:center;
     justify-content:center;
-    animation:fadeIn 0.5s ease-in-out;
+    flex-direction:column;
 }
 
 .gameover h2 {
-    font-family:'Orbitron', sans-serif;
-    font-size:70px;
-    letter-spacing:8px;
+    font-family:'Orbitron';
+    font-size:50px;
     color:#ff004c;
-
-    text-shadow:
-        0 0 5px #ff004c,
-        0 0 10px #ff004c,
-        0 0 20px #ff004c,
-        0 0 40px #ff004c,
-        0 0 80px #ff004c;
-
-    animation:neonFlicker 1.5s infinite alternate;
-}
-
-.gameover p {
-    color:#00ffe5;
-    font-size:18px;
-    margin-top:15px;
-    opacity:0.8;
+    text-shadow:0 0 20px #ff004c,0 0 60px #ff004c;
 }
 
 .gameover button {
-    margin-top:25px;
-    padding:12px 30px;
-    font-size:18px;
+    margin-top:20px;
+    padding:10px 25px;
     border:none;
-    border-radius:10px;
     background:#00ffe5;
-    color:#000;
     font-weight:bold;
-
-    box-shadow:
-        0 0 10px #00ffe5,
-        0 0 20px #00ffe5,
-        0 0 40px #00ffe5;
-
-    transition:0.2s;
-}
-
-.gameover button:hover {
-    transform:scale(1.05);
-    box-shadow:
-        0 0 20px #00ffe5,
-        0 0 40px #00ffe5,
-        0 0 80px #00ffe5;
-}
-
-@keyframes fadeIn {
-    from {opacity:0;}
-    to {opacity:1;}
-}
-
-@keyframes neonFlicker {
-    0% {
-        opacity:1;
-        text-shadow:
-            0 0 5px #ff004c,
-            0 0 15px #ff004c,
-            0 0 30px #ff004c,
-            0 0 60px #ff004c;
-    }
-    50% {
-        opacity:0.7;
-        text-shadow:
-            0 0 2px #ff004c,
-            0 0 8px #ff004c,
-            0 0 15px #ff004c;
-    }
-    100% {
-        opacity:1;
-        text-shadow:
-            0 0 10px #ff004c,
-            0 0 25px #ff004c,
-            0 0 50px #ff004c,
-            0 0 100px #ff004c;
-    }
 }
 </style>
 </head>
@@ -172,16 +83,7 @@ canvas {
 
 <h1>SNAKE NEON</h1>
 
-<div class="score">Score: <span id="score">0</span></div>
-<div class="highscore">High Score: <span id="highscore">0</span></div>
-<div class="level">Level: <span id="level">1</span></div>
-
-<div class="top-controls">
-    <button onclick="toggleGame()">⏯ تشغيل</button>
-    <button onclick="restartGame()">🔄 إعادة</button>
-</div>
-
-<canvas id="game" width="500" height="500"></canvas>
+<canvas id="game"></canvas>
 
 <div class="controls">
     <div></div>
@@ -193,19 +95,30 @@ canvas {
     <button data-dir="RIGHT">▶</button>
 </div>
 
-<!-- Game Over -->
 <div class="gameover" id="gameover">
     <h2>GAME OVER</h2>
-    <p>Try Again</p>
     <button onclick="restartGame()">RESTART</button>
 </div>
 
 <script>
 const canvas=document.getElementById("game");
 const ctx=canvas.getContext("2d");
+
+/* 🔥 مقاس ديناميكي */
+function resizeCanvas(){
+    let size=Math.min(window.innerWidth, window.innerHeight)*0.8;
+    canvas.width=size;
+    canvas.height=size;
+}
+resizeCanvas();
+window.addEventListener("resize",resizeCanvas);
+
 const box=25;
 
-/* تحكم سريع */
+let snake,direction,nextDirection,food;
+let game=null;
+
+/* 🔥 دعم الأزرار */
 document.querySelectorAll("[data-dir]").forEach(btn=>{
     btn.addEventListener("pointerdown",e=>{
         setDir(btn.dataset.dir);
@@ -213,176 +126,111 @@ document.querySelectorAll("[data-dir]").forEach(btn=>{
     });
 });
 
-/* صوت */
-function playEatSound(){
-    const audioCtx=new (window.AudioContext||window.webkitAudioContext)();
-    const osc=audioCtx.createOscillator();
-    const gain=audioCtx.createGain();
+/* 🔥 دعم السحب (Swipe) */
+let startX=0,startY=0;
 
-    osc.type="square";
-    osc.frequency.value=600;
-    gain.gain.value=0.1;
+canvas.addEventListener("touchstart",e=>{
+    startX=e.touches[0].clientX;
+    startY=e.touches[0].clientY;
+});
 
-    osc.connect(gain);
-    gain.connect(audioCtx.destination);
+canvas.addEventListener("touchend",e=>{
+    let dx=e.changedTouches[0].clientX-startX;
+    let dy=e.changedTouches[0].clientY-startY;
 
-    osc.start();
-    osc.stop(audioCtx.currentTime+0.1);
-}
+    if(Math.abs(dx)>Math.abs(dy)){
+        if(dx>0) setDir("RIGHT");
+        else setDir("LEFT");
+    }else{
+        if(dy>0) setDir("DOWN");
+        else setDir("UP");
+    }
+});
 
-/* بيانات */
-let highScore=localStorage.getItem("snakeHighScore")||0;
-document.getElementById("highscore").textContent=highScore;
-
-let snake,direction,nextDirection,score,food;
-let game=null;
-let running=false;
-
-let level=1;
-let speed=120;
-const minSpeed=60;
+/* 🔥 كيبورد */
+document.addEventListener("keydown",e=>{
+    if(e.key==="ArrowLeft") setDir("LEFT");
+    if(e.key==="ArrowRight") setDir("RIGHT");
+    if(e.key==="ArrowUp") setDir("UP");
+    if(e.key==="ArrowDown") setDir("DOWN");
+});
 
 function initGame(){
     snake=[
-        {x:250,y:250},
-        {x:225,y:250},
-        {x:200,y:250}
+        {x:200,y:200},
+        {x:175,y:200},
+        {x:150,y:200}
     ];
-
     direction="RIGHT";
     nextDirection="RIGHT";
-    score=0;
-    level=1;
-    speed=120;
-
-    document.getElementById("score").textContent=score;
-    document.getElementById("level").textContent=level;
-
-    document.getElementById("gameover").style.display="none";
 
     food={
-        x:Math.floor(Math.random()*20)*box,
-        y:Math.floor(Math.random()*20)*box
+        x:Math.floor(Math.random()*10)*box,
+        y:Math.floor(Math.random()*10)*box
     };
+
+    document.getElementById("gameover").style.display="none";
 }
 
 function setDir(dir){
     if(dir==="LEFT"&&direction!=="RIGHT")nextDirection="LEFT";
-    if(dir==="UP"&&direction!=="DOWN")nextDirection="UP";
     if(dir==="RIGHT"&&direction!=="LEFT")nextDirection="RIGHT";
+    if(dir==="UP"&&direction!=="DOWN")nextDirection="UP";
     if(dir==="DOWN"&&direction!=="UP")nextDirection="DOWN";
 }
 
-function showGameOver(){
-    document.getElementById("gameover").style.display="flex";
-}
-
-/* مراحل */
-function updateLevel(){
-    let newLevel=Math.floor(score/5)+1;
-
-    if(newLevel!==level){
-        level=newLevel;
-        document.getElementById("level").textContent=level;
-
-        speed=Math.max(minSpeed,120-level*8);
-
-        clearInterval(game);
-        game=setInterval(draw,speed);
-    }
-}
-
-/* اللعبة */
 function draw(){
     direction=nextDirection;
 
     ctx.fillStyle="#9bbc0f";
     ctx.fillRect(0,0,canvas.width,canvas.height);
 
-    ctx.fillStyle="#8b0000";
+    ctx.fillStyle="red";
     ctx.fillRect(food.x,food.y,box,box);
 
     let headX=snake[0].x;
     let headY=snake[0].y;
 
     if(direction==="LEFT")headX-=box;
-    if(direction==="UP")headY-=box;
     if(direction==="RIGHT")headX+=box;
+    if(direction==="UP")headY-=box;
     if(direction==="DOWN")headY+=box;
 
-    let hitWall=
+    if(
         headX<0||headY<0||
         headX>canvas.width-box||
-        headY>canvas.height-box;
-
-    let hitSelf=snake.some((p,i)=>i!==0&&p.x===headX&&p.y===headY);
-
-    if(hitWall||hitSelf){
+        headY>canvas.height-box
+    ){
         clearInterval(game);
-        running=false;
-        showGameOver();
+        document.getElementById("gameover").style.display="flex";
         return;
     }
 
     if(headX===food.x&&headY===food.y){
-        score++;
-        document.getElementById("score").textContent=score;
-
-        playEatSound();
-
         food={
-            x:Math.floor(Math.random()*20)*box,
-            y:Math.floor(Math.random()*20)*box
+            x:Math.floor(Math.random()*10)*box,
+            y:Math.floor(Math.random()*10)*box
         };
-
-        if(score>highScore){
-            highScore=score;
-            localStorage.setItem("snakeHighScore",highScore);
-            document.getElementById("highscore").textContent=highScore;
-        }
-
-        updateLevel();
     }else{
         snake.pop();
     }
 
     snake.unshift({x:headX,y:headY});
 
-    snake.forEach((p,i)=>{
-        ctx.beginPath();
-        ctx.roundRect(p.x,p.y,box,box,6);
-        ctx.fillStyle=i===0?"#00ffe5":"#007a66";
-        ctx.shadowBlur=10;
-        ctx.shadowColor="#00ffe5";
-        ctx.fill();
-        ctx.shadowBlur=0;
-        ctx.stroke();
+    snake.forEach(p=>{
+        ctx.fillStyle="#00ffe5";
+        ctx.fillRect(p.x,p.y,box,box);
     });
 }
 
-/* تشغيل */
-function toggleGame(){
-    if(running){
-        clearInterval(game);
-        running=false;
-    }else{
-        game=setInterval(draw,speed);
-        running=true;
-    }
-}
-
-/* إعادة */
 function restartGame(){
     clearInterval(game);
-    running=false;
     initGame();
-    game=setInterval(draw,speed);
-    running=true;
+    game=setInterval(draw,120);
 }
 
 initGame();
-game=setInterval(draw,speed);
-running=true;
+game=setInterval(draw,120);
 
 </script>
 
