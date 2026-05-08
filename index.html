@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 
-<title>SNAKE NEON</title>
+<title>Snake</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600&display=swap" rel="stylesheet">
 
@@ -37,7 +37,6 @@ canvas {
     background:#9bbc0f;
 }
 
-/* أزرار */
 .top-controls {
     margin:10px;
     display:flex;
@@ -52,7 +51,6 @@ canvas {
     color:#00ffe5;
 }
 
-/* الأسهم */
 .controls {
     margin-top:15px;
     display:grid;
@@ -69,7 +67,6 @@ canvas {
     color:#00ffe5;
 }
 
-/* Game Over */
 .gameover {
     position:fixed;
     top:0;left:0;
@@ -92,7 +89,7 @@ canvas {
 
 <body>
 
-<h1>SNAKE NEON</h1>
+<h1>Snake</h1>
 
 <div class="score">Score: <span id="score">0</span></div>
 <div class="highscore">High Score: <span id="highscore">0</span></div>
@@ -124,16 +121,17 @@ canvas {
 const canvas=document.getElementById("game");
 const ctx=canvas.getContext("2d");
 
-/* 🔥 Responsive */
+const box=25;
+
+/* 🔥 جعل الكانفس متوافق مع الشبكة */
 function resizeCanvas(){
     let size=Math.min(window.innerWidth,window.innerHeight)*0.8;
+    size=Math.floor(size/box)*box; // 🔥 أهم سطر (توافق الشبكة)
     canvas.width=size;
     canvas.height=size;
 }
 resizeCanvas();
 window.addEventListener("resize",resizeCanvas);
-
-const box=25;
 
 /* تحكم */
 document.querySelectorAll("[data-dir]").forEach(btn=>{
@@ -190,15 +188,15 @@ let level=1;
 let speed=120;
 let running=true;
 
-/* 🔥 Loop ثابت */
 let lastTime=0;
 
 function initGame(){
     snake=[
-        {x:250,y:250},
-        {x:225,y:250},
-        {x:200,y:250}
+        {x:box*10,y:box*10},
+        {x:box*9,y:box*10},
+        {x:box*8,y:box*10}
     ];
+
     direction="RIGHT";
     nextDirection="RIGHT";
     score=0;
@@ -209,9 +207,17 @@ function initGame(){
     document.getElementById("level").textContent=level;
     document.getElementById("gameover").style.display="none";
 
+    spawnFood();
+}
+
+/* 🔥 توليد أكل داخل الإطار فقط */
+function spawnFood(){
+    let cols=canvas.width/box;
+    let rows=canvas.height/box;
+
     food={
-        x:Math.floor(Math.random()*20)*box,
-        y:Math.floor(Math.random()*20)*box
+        x:Math.floor(Math.random()*cols)*box,
+        y:Math.floor(Math.random()*rows)*box
     };
 }
 
@@ -259,5 +265,53 @@ function draw(){
     if(direction==="UP")headY-=box;
     if(direction==="DOWN")headY+=box;
 
-    if(headX<0||headY<0||headX>canvas.width-box||headY>canvas.height-box||
-       snake.some
+    if(headX<0||headY<0||headX>=canvas.width||headY>=canvas.height||
+       snake.some((p,i)=>i!==0&&p.x===headX&&p.y===headY)){
+        running=false;
+        document.getElementById("gameover").style.display="flex";
+        return;
+    }
+
+    if(headX===food.x&&headY===food.y){
+        score++;
+        document.getElementById("score").textContent=score;
+        playEatSound();
+
+        spawnFood(); // 🔥 الحل هنا
+
+        if(score>highScore){
+            highScore=score;
+            localStorage.setItem("snakeHighScore",highScore);
+            document.getElementById("highscore").textContent=highScore;
+        }
+
+        updateLevel();
+    }else{
+        snake.pop();
+    }
+
+    snake.unshift({x:headX,y:headY});
+
+    snake.forEach((p,i)=>{
+        ctx.fillStyle=i===0?"#00ffe5":"#007a66";
+        ctx.fillRect(p.x,p.y,box,box);
+    });
+}
+
+function toggleGame(){
+    running=!running;
+    if(running) requestAnimationFrame(gameLoop);
+}
+
+function restartGame(){
+    initGame();
+    running=true;
+    requestAnimationFrame(gameLoop);
+}
+
+initGame();
+requestAnimationFrame(gameLoop);
+</script>
+
+</body>
+</html>
