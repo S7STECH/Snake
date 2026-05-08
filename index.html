@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+<meta charset="UTF-8">
+<title>GAME SNAKE</title>
+
+<!-- خط احترافي -->
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;900&display=swap" rel="stylesheet">
+
+<style>
+    body {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        background: #0a0a0a;
+        color: #fff;
+        font-family: Arial;
+        flex-direction: column;
+    }
+
+    /* عنوان احترافي */
+    h1 {
+        font-family: 'Orbitron', sans-serif;
+        font-size: 40px;
+        margin-bottom: 15px;
+        color: #00ffcc;
+        text-shadow:
+            0 0 5px #00ffcc,
+            0 0 10px #00ffcc,
+            0 0 20px #00ffcc,
+            0 0 40px #00ffcc;
+        letter-spacing: 3px;
+    }
+
+    canvas {
+        background: #000;
+        border: 2px solid #00ffcc;
+        box-shadow: 0 0 20px #00ffcc33;
+    }
+
+    .signature {
+        margin-top: 10px;
+        font-size: 14px;
+        color: #00ffcc;
+        opacity: 0.7;
+        letter-spacing: 1px;
+    }
+
+    .signature span {
+        color: #fff;
+        font-weight: bold;
+    }
+</style>
+</head>
+<body>
+
+<h1>GAME SNAKE</h1>
+
+<canvas id="game" width="400" height="400"></canvas>
+
+<div class="signature">
+    تصميم <span>حسين بن سعيد</span> | s7s_tec
+</div>
+
+<script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+const box = 20;
+let snake = [{x: 200, y: 200}];
+let direction = "RIGHT";
+
+let food = {
+    x: Math.floor(Math.random() * 20) * box,
+    y: Math.floor(Math.random() * 20) * box
+};
+
+document.addEventListener("keydown", changeDirection);
+
+function changeDirection(event) {
+    if (event.key === "ArrowLeft" && direction !== "RIGHT") direction = "LEFT";
+    else if (event.key === "ArrowUp" && direction !== "DOWN") direction = "UP";
+    else if (event.key === "ArrowRight" && direction !== "LEFT") direction = "RIGHT";
+    else if (event.key === "ArrowDown" && direction !== "UP") direction = "DOWN";
+}
+
+function draw() {
+    ctx.fillStyle = "#000";
+    ctx.fillRect(0, 0, 400, 400);
+
+    ctx.fillStyle = "#00ffcc";
+    snake.forEach(part => {
+        ctx.fillRect(part.x, part.y, box, box);
+    });
+
+    ctx.fillStyle = "red";
+    ctx.fillRect(food.x, food.y, box, box);
+
+    let headX = snake[0].x;
+    let headY = snake[0].y;
+
+    if (direction === "LEFT") headX -= box;
+    if (direction === "UP") headY -= box;
+    if (direction === "RIGHT") headX += box;
+    if (direction === "DOWN") headY += box;
+
+    if (headX === food.x && headY === food.y) {
+        food = {
+            x: Math.floor(Math.random() * 20) * box,
+            y: Math.floor(Math.random() * 20) * box
+        };
+    } else {
+        snake.pop();
+    }
+
+    const newHead = {x: headX, y: headY};
+
+    if (
+        headX < 0 || headY < 0 ||
+        headX >= 400 || headY >= 400 ||
+        snake.some(part => part.x === headX && part.y === headY)
+    ) {
+        clearInterval(game);
+        alert("انتهت اللعبة 😢");
+    }
+
+    snake.unshift(newHead);
+}
+
+const game = setInterval(draw, 120);
+</script>
+
+</body>
+</html>
