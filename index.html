@@ -16,7 +16,6 @@ body {
     background: #111;
 }
 
-/* العنوان */
 h1 {
     font-family: 'Orbitron', sans-serif;
     font-size: 50px;
@@ -24,20 +23,23 @@ h1 {
     text-shadow: 0 0 20px #00ffcc;
 }
 
-/* نقاط */
 .score {
     color: #fff;
-    margin-bottom: 10px;
+    margin-bottom: 5px;
     font-size: 20px;
 }
 
-/* الشاشة */
+.highscore {
+    color: gold;
+    margin-bottom: 10px;
+    font-size: 18px;
+}
+
 canvas {
     background: #9bbc0f;
     border: 10px solid #2f4f2f;
 }
 
-/* الأزرار */
 .controls {
     margin-top: 20px;
     display: grid;
@@ -53,7 +55,18 @@ button {
     background: #00ffcc;
 }
 
-/* التوقيع */
+.game-buttons {
+    margin-top: 15px;
+    display: flex;
+    gap: 10px;
+}
+
+.game-buttons button {
+    height: 50px;
+    font-size: 16px;
+    padding: 10px 15px;
+}
+
 .signature {
     margin-top: 15px;
     color: #00ffcc;
@@ -68,7 +81,9 @@ button {
 <body>
 
 <h1>GAME SNAKE</h1>
+
 <div class="score">Score: <span id="score">0</span></div>
+<div class="highscore">High Score: <span id="highscore">0</span></div>
 
 <canvas id="game" width="500" height="500"></canvas>
 
@@ -82,6 +97,11 @@ button {
     <button ontouchstart="setDir('RIGHT')" onclick="setDir('RIGHT')">➡️</button>
 </div>
 
+<div class="game-buttons">
+    <button onclick="toggleGame()">⏯ تشغيل / إيقاف</button>
+    <button onclick="restartGame()">🔄 إعادة</button>
+</div>
+
 <div class="signature">
     تصميم <span>حسين بن سعيد</span> | s7s_tec
 </div>
@@ -89,19 +109,52 @@ button {
 <script>
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
-
 const box = 25;
 
-let snake = [
-    {x: 250, y: 250},
-    {x: 225, y: 250},
-    {x: 200, y: 250}
-];
+/* صوت الأكل (بدون ملف خارجي) */
+function playEatSound(){
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
 
-let direction = "RIGHT";
-let nextDirection = "RIGHT"; // حل مشكلة التعليق
+    osc.type = "square";
+    osc.frequency.setValueAtTime(600, audioCtx.currentTime);
 
-let score = 0;
+    gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.1);
+}
+
+/* أعلى نتيجة */
+let highScore = localStorage.getItem("snakeHighScore") || 0;
+document.getElementById("highscore").textContent = highScore;
+
+let snake, direction, nextDirection, score, food;
+let game = null;
+let running = false;
+
+function initGame(){
+    snake = [
+        {x: 250, y: 250},
+        {x: 225, y: 250},
+        {x: 200, y: 250}
+    ];
+
+    direction = "RIGHT";
+    nextDirection = "RIGHT";
+    score = 0;
+
+    document.getElementById("score").textContent = score;
+
+    food = {
+        x: Math.floor(Math.random() * 20) * box,
+        y: Math.floor(Math.random() * 20) * box
+    };
+}
 
 function setDir(dir){
     if (dir === "LEFT" && direction !== "RIGHT") nextDirection = "LEFT";
@@ -110,7 +163,6 @@ function setDir(dir){
     if (dir === "DOWN" && direction !== "UP") nextDirection = "DOWN";
 }
 
-/* دعم الكيبورد */
 document.addEventListener("keydown", e => {
     if (e.key === "ArrowLeft") setDir("LEFT");
     if (e.key === "ArrowUp") setDir("UP");
@@ -118,13 +170,7 @@ document.addEventListener("keydown", e => {
     if (e.key === "ArrowDown") setDir("DOWN");
 });
 
-/* الأكل */
-let food = {
-    x: Math.floor(Math.random() * 20) * box,
-    y: Math.floor(Math.random() * 20) * box
-};
-
-function drawSnake() {
+function drawSnake(){
     snake.forEach((part, i) => {
         ctx.fillStyle = i === 0 ? "#0f380f" : "#306230";
         ctx.fillRect(part.x, part.y, box, box);
@@ -132,23 +178,16 @@ function drawSnake() {
         ctx.strokeStyle = "#9bbc0f";
         ctx.strokeRect(part.x, part.y, box, box);
     });
-
-    // عيون
-    ctx.fillStyle = "#fff";
-    ctx.fillRect(snake[0].x + 6, snake[0].y + 6, 4, 4);
-    ctx.fillRect(snake[0].x + 15, snake[0].y + 6, 4, 4);
 }
 
-function draw() {
-
-    direction = nextDirection; // تحديث الاتجاه بشكل آمن
+function draw(){
+    direction = nextDirection;
 
     ctx.fillStyle = "#9bbc0f";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     drawSnake();
 
-    // رسم الأكل
     ctx.fillStyle = "#8b0000";
     ctx.fillRect(food.x, food.y, box, box);
 
@@ -160,35 +199,69 @@ function draw() {
     if (direction === "RIGHT") headX += box;
     if (direction === "DOWN") headY += box;
 
-    // أكل
+    /* الأكل */
     if (headX === food.x && headY === food.y) {
         score++;
         document.getElementById("score").textContent = score;
+
+        playEatSound(); // 🔊 صوت الأكل
 
         food = {
             x: Math.floor(Math.random() * 20) * box,
             y: Math.floor(Math.random() * 20) * box
         };
+
+        /* تحديث أعلى نتيجة */
+        if (score > highScore) {
+            highScore = score;
+            localStorage.setItem("snakeHighScore", highScore);
+            document.getElementById("highscore").textContent = highScore;
+        }
+
     } else {
         snake.pop();
     }
 
     let newHead = {x: headX, y: headY};
 
-    // اصطدام
     if (
         headX < 0 || headY < 0 ||
         headX >= canvas.width || headY >= canvas.height ||
         snake.some((p, i) => i !== 0 && p.x === headX && p.y === headY)
     ) {
         clearInterval(game);
+        running = false;
         alert("Game Over 😢");
     }
 
     snake.unshift(newHead);
 }
 
-let game = setInterval(draw, 100);
+/* تشغيل / إيقاف */
+function toggleGame(){
+    if (running) {
+        clearInterval(game);
+        running = false;
+    } else {
+        game = setInterval(draw, 100);
+        running = true;
+    }
+}
+
+/* إعادة تشغيل */
+function restartGame(){
+    clearInterval(game);
+    running = false;
+    initGame();
+    game = setInterval(draw, 100);
+    running = true;
+}
+
+/* بدء اللعبة */
+initGame();
+game = setInterval(draw, 100);
+running = true;
+
 </script>
 
 </body>
