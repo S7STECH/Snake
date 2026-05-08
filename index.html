@@ -23,7 +23,7 @@ h1 {
     text-shadow: 0 0 20px #00ffe5;
 }
 
-.score, .highscore {
+.score, .highscore, .level {
     color: #fff;
     font-size: 18px;
 }
@@ -82,6 +82,7 @@ canvas {
 
 <div class="score">Score: <span id="score">0</span></div>
 <div class="highscore">High Score: <span id="highscore">0</span></div>
+<div class="level">Level: <span id="level">1</span></div>
 
 <div class="top-controls">
     <button onclick="toggleGame()">⏯ تشغيل</button>
@@ -106,14 +107,14 @@ const ctx = canvas.getContext("2d");
 const box = 25;
 
 /* تحكم سريع */
-document.querySelectorAll("[data-dir]").forEach(btn => {
-    btn.addEventListener("pointerdown", (e) => {
+document.querySelectorAll("[data-dir]").forEach(btn=>{
+    btn.addEventListener("pointerdown",(e)=>{
         setDir(btn.dataset.dir);
         e.preventDefault();
     });
 });
 
-/* صوت الأكل */
+/* صوت */
 function playEatSound(){
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     const osc = audioCtx.createOscillator();
@@ -130,13 +131,18 @@ function playEatSound(){
     osc.stop(audioCtx.currentTime + 0.1);
 }
 
-/* High score */
+/* بيانات */
 let highScore = localStorage.getItem("snakeHighScore") || 0;
 document.getElementById("highscore").textContent = highScore;
 
 let snake, direction, nextDirection, score, food;
 let game = null;
 let running = false;
+
+/* 🔥 مستويات */
+let level = 1;
+let speed = 140; // البداية هادئة
+const minSpeed = 60; // أقصى سرعة
 
 function initGame(){
     snake = [
@@ -148,20 +154,38 @@ function initGame(){
     direction = "RIGHT";
     nextDirection = "RIGHT";
     score = 0;
+    level = 1;
+    speed = 140;
 
     document.getElementById("score").textContent = score;
+    document.getElementById("level").textContent = level;
 
     food = {
-        x: Math.floor(Math.random() * 20) * box,
-        y: Math.floor(Math.random() * 20) * box
+        x: Math.floor(Math.random()*20)*box,
+        y: Math.floor(Math.random()*20)*box
     };
 }
 
 function setDir(dir){
-    if (dir === "LEFT" && direction !== "RIGHT") nextDirection = "LEFT";
-    if (dir === "UP" && direction !== "DOWN") nextDirection = "UP";
-    if (dir === "RIGHT" && direction !== "LEFT") nextDirection = "RIGHT";
-    if (dir === "DOWN" && direction !== "UP") nextDirection = "DOWN";
+    if (dir==="LEFT" && direction!=="RIGHT") nextDirection="LEFT";
+    if (dir==="UP" && direction!=="DOWN") nextDirection="UP";
+    if (dir==="RIGHT" && direction!=="LEFT") nextDirection="RIGHT";
+    if (dir==="DOWN" && direction!=="UP") nextDirection="DOWN";
+}
+
+/* 🔥 تحديث السرعة والمراحل */
+function updateLevel(){
+    let newLevel = Math.floor(score / 5) + 1;
+
+    if (newLevel !== level) {
+        level = newLevel;
+        document.getElementById("level").textContent = level;
+
+        speed = Math.max(minSpeed, 140 - (level * 10));
+
+        clearInterval(game);
+        game = setInterval(draw, speed);
+    }
 }
 
 function draw(){
@@ -176,15 +200,15 @@ function draw(){
     let headX = snake[0].x;
     let headY = snake[0].y;
 
-    if (direction === "LEFT") headX -= box;
-    if (direction === "UP") headY -= box;
-    if (direction === "RIGHT") headX += box;
-    if (direction === "DOWN") headY += box;
+    if (direction==="LEFT") headX-=box;
+    if (direction==="UP") headY-=box;
+    if (direction==="RIGHT") headX+=box;
+    if (direction==="DOWN") headY+=box;
 
     let hitWall =
-        headX < 0 || headY < 0 ||
-        headX > canvas.width - box ||
-        headY > canvas.height - box;
+        headX<0 || headY<0 ||
+        headX>canvas.width-box ||
+        headY>canvas.height-box;
 
     let hitSelf = snake.some((p,i)=>i!==0 && p.x===headX && p.y===headY);
 
@@ -195,7 +219,7 @@ function draw(){
         return;
     }
 
-    if (headX === food.x && headY === food.y) {
+    if (headX===food.x && headY===food.y){
         score++;
         document.getElementById("score").textContent = score;
 
@@ -206,56 +230,54 @@ function draw(){
             y: Math.floor(Math.random()*20)*box
         };
 
-        if (score > highScore) {
+        if (score > highScore){
             highScore = score;
             localStorage.setItem("snakeHighScore", highScore);
             document.getElementById("highscore").textContent = highScore;
         }
+
+        updateLevel(); // 🔥 تحديث المرحلة
     } else {
         snake.pop();
     }
 
-    snake.unshift({x: headX, y: headY});
+    snake.unshift({x:headX,y:headY});
 
-    /* 🐍 رسم الثعبان بشكل أجمل */
     snake.forEach((p,i)=>{
         ctx.beginPath();
-        ctx.roundRect(p.x, p.y, box, box, 6);
-
-        ctx.fillStyle = i === 0 ? "#00ffe5" : "#007a66";
+        ctx.roundRect(p.x,p.y,box,box,6);
+        ctx.fillStyle = i===0 ? "#00ffe5" : "#007a66";
         ctx.shadowBlur = 10;
         ctx.shadowColor = "#00ffe5";
         ctx.fill();
-
         ctx.shadowBlur = 0;
-        ctx.strokeStyle = "#003d33";
         ctx.stroke();
     });
 }
 
-/* تشغيل / إيقاف */
+/* تشغيل */
 function toggleGame(){
-    if (running) {
+    if (running){
         clearInterval(game);
-        running = false;
+        running=false;
     } else {
-        game = setInterval(draw, 120); // ⏱ أبطأ وأريح
-        running = true;
+        game=setInterval(draw,speed);
+        running=true;
     }
 }
 
 /* إعادة */
 function restartGame(){
     clearInterval(game);
-    running = false;
+    running=false;
     initGame();
-    game = setInterval(draw, 120);
-    running = true;
+    game=setInterval(draw,speed);
+    running=true;
 }
 
 initGame();
-game = setInterval(draw, 120);
-running = true;
+game=setInterval(draw,speed);
+running=true;
 
 </script>
 
