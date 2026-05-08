@@ -13,33 +13,58 @@ body {
     align-items: center;
     justify-content: center;
     height: 100vh;
-    background: #111;
+    background: #0a0a0a;
+    overflow: hidden;
 }
 
+/* العنوان */
 h1 {
     font-family: 'Orbitron', sans-serif;
     font-size: 50px;
-    color: #00ffcc;
-    text-shadow: 0 0 20px #00ffcc;
-}
-
-.score {
-    color: #fff;
+    color: #00ffe5;
+    text-shadow: 0 0 15px #00ffe5, 0 0 30px #00ffe5;
     margin-bottom: 5px;
-    font-size: 20px;
 }
 
-.highscore {
-    color: gold;
-    margin-bottom: 10px;
+/* السكور */
+.score, .highscore {
+    color: #fff;
     font-size: 18px;
 }
 
+/* الكانفس */
 canvas {
     background: #9bbc0f;
-    border: 10px solid #2f4f2f;
+    border: 6px solid #00ffe5;
+    box-shadow: 0 0 25px #00ffe5;
+    margin-top: 10px;
 }
 
+/* ================== أزرار التحكم العلوية ================== */
+.top-controls {
+    margin: 10px 0;
+    display: flex;
+    gap: 10px;
+}
+
+.top-controls button {
+    width: 140px;
+    height: 45px;
+    border: none;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: bold;
+    color: #00ffe5;
+    background: #111;
+    box-shadow: 0 0 10px #00ffe5;
+    cursor: pointer;
+}
+
+.top-controls button:active {
+    transform: scale(0.95);
+}
+
+/* ================== الأسهم ================== */
 .controls {
     margin-top: 20px;
     display: grid;
@@ -47,59 +72,51 @@ canvas {
     gap: 10px;
 }
 
-button {
-    height: 90px;
-    font-size: 30px;
-    border-radius: 10px;
-    border: none;
-    background: #00ffcc;
+.controls button {
+    height: 85px;
+    font-size: 28px;
+    border-radius: 15px;
+    border: 2px solid #00ffe5;
+    background: #111;
+    color: #00ffe5;
+    box-shadow: 0 0 12px #00ffe5;
 }
 
-.game-buttons {
-    margin-top: 15px;
-    display: flex;
-    gap: 10px;
-}
-
-.game-buttons button {
-    height: 50px;
-    font-size: 16px;
-    padding: 10px 15px;
-}
-
+/* التوقيع */
 .signature {
     margin-top: 15px;
-    color: #00ffcc;
+    color: #00ffe5;
 }
 .signature span {
     color: #fff;
-    font-weight: bold;
 }
 </style>
 </head>
 
 <body>
 
-<h1>GAME SNAKE</h1>
+<h1>🐍 SNAKE NEON</h1>
 
 <div class="score">Score: <span id="score">0</span></div>
 <div class="highscore">High Score: <span id="highscore">0</span></div>
 
-<canvas id="game" width="500" height="500"></canvas>
-
-<div class="controls">
-    <div></div>
-    <button ontouchstart="setDir('UP')" onclick="setDir('UP')">⬆️</button>
-    <div></div>
-
-    <button ontouchstart="setDir('LEFT')" onclick="setDir('LEFT')">⬅️</button>
-    <button ontouchstart="setDir('DOWN')" onclick="setDir('DOWN')">⬇️</button>
-    <button ontouchstart="setDir('RIGHT')" onclick="setDir('RIGHT')">➡️</button>
+<!-- أزرار التحكم الجديدة (بعيدة) -->
+<div class="top-controls">
+    <button onclick="toggleGame()">⏯ تشغيل</button>
+    <button onclick="restartGame()">🔄 إعادة</button>
 </div>
 
-<div class="game-buttons">
-    <button onclick="toggleGame()">⏯ تشغيل / إيقاف</button>
-    <button onclick="restartGame()">🔄 إعادة</button>
+<canvas id="game" width="500" height="500"></canvas>
+
+<!-- الأسهم -->
+<div class="controls">
+    <div></div>
+    <button onclick="setDir('UP')">▲</button>
+    <div></div>
+
+    <button onclick="setDir('LEFT')">◀</button>
+    <button onclick="setDir('DOWN')">▼</button>
+    <button onclick="setDir('RIGHT')">▶</button>
 </div>
 
 <div class="signature">
@@ -163,7 +180,7 @@ function setDir(dir){
     if (dir === "DOWN" && direction !== "UP") nextDirection = "DOWN";
 }
 
-/* حركة + تصادم مضبوط */
+/* اللعبة */
 function draw(){
 
     direction = nextDirection;
@@ -171,11 +188,9 @@ function draw(){
     ctx.fillStyle = "#9bbc0f";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // رسم الأكل
     ctx.fillStyle = "#8b0000";
     ctx.fillRect(food.x, food.y, box, box);
 
-    // رأس الثعبان الحالي
     let headX = snake[0].x;
     let headY = snake[0].y;
 
@@ -184,10 +199,8 @@ function draw(){
     if (direction === "RIGHT") headX += box;
     if (direction === "DOWN") headY += box;
 
-    /* 🔥 إصلاح التصادم: يتم قبل إضافة الرأس */
     let hitWall =
-        headX < 0 ||
-        headY < 0 ||
+        headX < 0 || headY < 0 ||
         headX > canvas.width - box ||
         headY > canvas.height - box;
 
@@ -200,7 +213,6 @@ function draw(){
         return;
     }
 
-    /* الأكل */
     if (headX === food.x && headY === food.y) {
         score++;
         document.getElementById("score").textContent = score;
@@ -217,22 +229,19 @@ function draw(){
             localStorage.setItem("snakeHighScore", highScore);
             document.getElementById("highscore").textContent = highScore;
         }
-
     } else {
         snake.pop();
     }
 
-    // إضافة الرأس بعد التحقق (هذا أهم إصلاح)
     snake.unshift({x: headX, y: headY});
 
-    // رسم الثعبان
-    snake.forEach((part, i) => {
+    snake.forEach((p, i) => {
         ctx.fillStyle = i === 0 ? "#0f380f" : "#306230";
-        ctx.fillRect(part.x, part.y, box, box);
+        ctx.fillRect(p.x, p.y, box, box);
     });
 }
 
-/* تشغيل */
+/* تشغيل / إيقاف */
 function toggleGame(){
     if (running) {
         clearInterval(game);
@@ -252,7 +261,7 @@ function restartGame(){
     running = true;
 }
 
-/* start */
+/* بدء */
 initGame();
 game = setInterval(draw, 100);
 running = true;
