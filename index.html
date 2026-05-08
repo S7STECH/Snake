@@ -14,7 +14,6 @@ body {
     justify-content: center;
     height: 100vh;
     background: #0a0a0a;
-    overflow: hidden;
 }
 
 /* العنوان */
@@ -22,8 +21,7 @@ h1 {
     font-family: 'Orbitron', sans-serif;
     font-size: 50px;
     color: #00ffe5;
-    text-shadow: 0 0 15px #00ffe5, 0 0 30px #00ffe5;
-    margin-bottom: 5px;
+    text-shadow: 0 0 20px #00ffe5;
 }
 
 /* السكور */
@@ -37,10 +35,9 @@ canvas {
     background: #9bbc0f;
     border: 6px solid #00ffe5;
     box-shadow: 0 0 25px #00ffe5;
-    margin-top: 10px;
 }
 
-/* ================== أزرار التحكم العلوية ================== */
+/* أزرار التشغيل */
 .top-controls {
     margin: 10px 0;
     display: flex;
@@ -52,19 +49,13 @@ canvas {
     height: 45px;
     border: none;
     border-radius: 12px;
-    font-size: 16px;
-    font-weight: bold;
-    color: #00ffe5;
     background: #111;
-    box-shadow: 0 0 10px #00ffe5;
-    cursor: pointer;
+    color: #00ffe5;
+    box-shadow: 0 0 12px #00ffe5;
+    font-weight: bold;
 }
 
-.top-controls button:active {
-    transform: scale(0.95);
-}
-
-/* ================== الأسهم ================== */
+/* الأسهم */
 .controls {
     margin-top: 20px;
     display: grid;
@@ -80,15 +71,16 @@ canvas {
     background: #111;
     color: #00ffe5;
     box-shadow: 0 0 12px #00ffe5;
+
+    /* 🔥 إصلاح اللمس */
+    touch-action: manipulation;
+    user-select: none;
 }
 
 /* التوقيع */
 .signature {
     margin-top: 15px;
     color: #00ffe5;
-}
-.signature span {
-    color: #fff;
 }
 </style>
 </head>
@@ -100,7 +92,6 @@ canvas {
 <div class="score">Score: <span id="score">0</span></div>
 <div class="highscore">High Score: <span id="highscore">0</span></div>
 
-<!-- أزرار التحكم الجديدة (بعيدة) -->
 <div class="top-controls">
     <button onclick="toggleGame()">⏯ تشغيل</button>
     <button onclick="restartGame()">🔄 إعادة</button>
@@ -108,19 +99,14 @@ canvas {
 
 <canvas id="game" width="500" height="500"></canvas>
 
-<!-- الأسهم -->
 <div class="controls">
     <div></div>
-    <button onclick="setDir('UP')">▲</button>
+    <button data-dir="UP">▲</button>
     <div></div>
 
-    <button onclick="setDir('LEFT')">◀</button>
-    <button onclick="setDir('DOWN')">▼</button>
-    <button onclick="setDir('RIGHT')">▶</button>
-</div>
-
-<div class="signature">
-    تصميم <span>حسين بن سعيد</span> | s7s_tec
+    <button data-dir="LEFT">◀</button>
+    <button data-dir="DOWN">▼</button>
+    <button data-dir="RIGHT">▶</button>
 </div>
 
 <script>
@@ -128,7 +114,15 @@ const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 const box = 25;
 
-/* صوت الأكل */
+/* أسرع استجابة */
+document.querySelectorAll("[data-dir]").forEach(btn => {
+    btn.addEventListener("pointerdown", (e) => {
+        setDir(btn.dataset.dir);
+        e.preventDefault();
+    });
+});
+
+/* صوت */
 function playEatSound(){
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     const osc = audioCtx.createOscillator();
@@ -146,7 +140,7 @@ function playEatSound(){
     osc.stop(audioCtx.currentTime + 0.1);
 }
 
-/* High Score */
+/* High score */
 let highScore = localStorage.getItem("snakeHighScore") || 0;
 document.getElementById("highscore").textContent = highScore;
 
@@ -173,20 +167,21 @@ function initGame(){
     };
 }
 
+/* 🔥 أسرع تحديث اتجاه */
 function setDir(dir){
     if (dir === "LEFT" && direction !== "RIGHT") nextDirection = "LEFT";
     if (dir === "UP" && direction !== "DOWN") nextDirection = "UP";
     if (dir === "RIGHT" && direction !== "LEFT") nextDirection = "RIGHT";
     if (dir === "DOWN" && direction !== "UP") nextDirection = "DOWN";
+
+    direction = nextDirection; // 🔥 فوري بدون تأخير
 }
 
-/* اللعبة */
 function draw(){
-
     direction = nextDirection;
 
     ctx.fillStyle = "#9bbc0f";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillRect(0,0,canvas.width,canvas.height);
 
     ctx.fillStyle = "#8b0000";
     ctx.fillRect(food.x, food.y, box, box);
@@ -204,7 +199,7 @@ function draw(){
         headX > canvas.width - box ||
         headY > canvas.height - box;
 
-    let hitSelf = snake.some((p, i) => i !== 0 && p.x === headX && p.y === headY);
+    let hitSelf = snake.some((p,i)=>i!==0 && p.x===headX && p.y===headY);
 
     if (hitWall || hitSelf) {
         clearInterval(game);
@@ -220,8 +215,8 @@ function draw(){
         playEatSound();
 
         food = {
-            x: Math.floor(Math.random() * 20) * box,
-            y: Math.floor(Math.random() * 20) * box
+            x: Math.floor(Math.random()*20)*box,
+            y: Math.floor(Math.random()*20)*box
         };
 
         if (score > highScore) {
@@ -235,19 +230,19 @@ function draw(){
 
     snake.unshift({x: headX, y: headY});
 
-    snake.forEach((p, i) => {
-        ctx.fillStyle = i === 0 ? "#0f380f" : "#306230";
-        ctx.fillRect(p.x, p.y, box, box);
+    snake.forEach((p,i)=>{
+        ctx.fillStyle = i===0 ? "#0f380f" : "#306230";
+        ctx.fillRect(p.x,p.y,box,box);
     });
 }
 
-/* تشغيل / إيقاف */
+/* تشغيل */
 function toggleGame(){
     if (running) {
         clearInterval(game);
         running = false;
     } else {
-        game = setInterval(draw, 100);
+        game = setInterval(draw, 90); // 🔥 أسرع استجابة
         running = true;
     }
 }
@@ -257,13 +252,12 @@ function restartGame(){
     clearInterval(game);
     running = false;
     initGame();
-    game = setInterval(draw, 100);
+    game = setInterval(draw, 90);
     running = true;
 }
 
-/* بدء */
 initGame();
-game = setInterval(draw, 100);
+game = setInterval(draw, 90);
 running = true;
 
 </script>
