@@ -13,50 +13,50 @@ body {
     align-items: center;
     justify-content: center;
     height: 100vh;
-    background: #222;
+    background: #111;
 }
 
-/* العنوان أكبر */
+/* العنوان */
 h1 {
     font-family: 'Orbitron', sans-serif;
-    color: #00ffcc;
     font-size: 50px;
-    text-shadow: 0 0 15px #00ffcc;
-    margin-bottom: 20px;
+    color: #00ffcc;
+    text-shadow: 0 0 20px #00ffcc;
 }
 
-/* اللعبة أكبر */
+/* نقاط */
+.score {
+    color: #fff;
+    margin-bottom: 10px;
+    font-size: 20px;
+}
+
+/* الشاشة */
 canvas {
     background: #9bbc0f;
     border: 10px solid #2f4f2f;
-    box-shadow: 0 0 30px #000 inset;
 }
 
-/* أزرار التحكم */
+/* الأزرار */
 .controls {
     margin-top: 20px;
     display: grid;
-    grid-template-columns: 80px 80px 80px;
+    grid-template-columns: 90px 90px 90px;
     gap: 10px;
-    justify-content: center;
 }
 
 button {
-    width: 80px;
-    height: 80px;
+    height: 90px;
     font-size: 30px;
-    border: none;
     border-radius: 10px;
+    border: none;
     background: #00ffcc;
-    color: #000;
-    font-weight: bold;
 }
 
 /* التوقيع */
 .signature {
     margin-top: 15px;
     color: #00ffcc;
-    font-size: 18px;
 }
 .signature span {
     color: #fff;
@@ -68,17 +68,18 @@ button {
 <body>
 
 <h1>GAME SNAKE</h1>
+<div class="score">Score: <span id="score">0</span></div>
 
 <canvas id="game" width="500" height="500"></canvas>
 
 <div class="controls">
     <div></div>
-    <button onclick="setDir('UP')">⬆️</button>
+    <button ontouchstart="setDir('UP')" onclick="setDir('UP')">⬆️</button>
     <div></div>
 
-    <button onclick="setDir('LEFT')">⬅️</button>
-    <button onclick="setDir('DOWN')">⬇️</button>
-    <button onclick="setDir('RIGHT')">➡️</button>
+    <button ontouchstart="setDir('LEFT')" onclick="setDir('LEFT')">⬅️</button>
+    <button ontouchstart="setDir('DOWN')" onclick="setDir('DOWN')">⬇️</button>
+    <button ontouchstart="setDir('RIGHT')" onclick="setDir('RIGHT')">➡️</button>
 </div>
 
 <div class="signature">
@@ -91,7 +92,6 @@ const ctx = canvas.getContext("2d");
 
 const box = 25;
 
-// ثعبان أطول
 let snake = [
     {x: 250, y: 250},
     {x: 225, y: 250},
@@ -99,15 +99,18 @@ let snake = [
 ];
 
 let direction = "RIGHT";
+let nextDirection = "RIGHT"; // حل مشكلة التعليق
+
+let score = 0;
 
 function setDir(dir){
-    if (dir === "LEFT" && direction !== "RIGHT") direction = "LEFT";
-    if (dir === "UP" && direction !== "DOWN") direction = "UP";
-    if (dir === "RIGHT" && direction !== "LEFT") direction = "RIGHT";
-    if (dir === "DOWN" && direction !== "UP") direction = "DOWN";
+    if (dir === "LEFT" && direction !== "RIGHT") nextDirection = "LEFT";
+    if (dir === "UP" && direction !== "DOWN") nextDirection = "UP";
+    if (dir === "RIGHT" && direction !== "LEFT") nextDirection = "RIGHT";
+    if (dir === "DOWN" && direction !== "UP") nextDirection = "DOWN";
 }
 
-// دعم الكيبورد
+/* دعم الكيبورد */
 document.addEventListener("keydown", e => {
     if (e.key === "ArrowLeft") setDir("LEFT");
     if (e.key === "ArrowUp") setDir("UP");
@@ -115,19 +118,20 @@ document.addEventListener("keydown", e => {
     if (e.key === "ArrowDown") setDir("DOWN");
 });
 
+/* الأكل */
 let food = {
     x: Math.floor(Math.random() * 20) * box,
     y: Math.floor(Math.random() * 20) * box
 };
 
 function drawSnake() {
-    for (let i = 0; i < snake.length; i++) {
+    snake.forEach((part, i) => {
         ctx.fillStyle = i === 0 ? "#0f380f" : "#306230";
-        ctx.fillRect(snake[i].x, snake[i].y, box, box);
+        ctx.fillRect(part.x, part.y, box, box);
 
         ctx.strokeStyle = "#9bbc0f";
-        ctx.strokeRect(snake[i].x, snake[i].y, box, box);
-    }
+        ctx.strokeRect(part.x, part.y, box, box);
+    });
 
     // عيون
     ctx.fillStyle = "#fff";
@@ -136,12 +140,15 @@ function drawSnake() {
 }
 
 function draw() {
+
+    direction = nextDirection; // تحديث الاتجاه بشكل آمن
+
     ctx.fillStyle = "#9bbc0f";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     drawSnake();
 
-    // الأكل
+    // رسم الأكل
     ctx.fillStyle = "#8b0000";
     ctx.fillRect(food.x, food.y, box, box);
 
@@ -153,7 +160,11 @@ function draw() {
     if (direction === "RIGHT") headX += box;
     if (direction === "DOWN") headY += box;
 
+    // أكل
     if (headX === food.x && headY === food.y) {
+        score++;
+        document.getElementById("score").textContent = score;
+
         food = {
             x: Math.floor(Math.random() * 20) * box,
             y: Math.floor(Math.random() * 20) * box
@@ -164,6 +175,7 @@ function draw() {
 
     let newHead = {x: headX, y: headY};
 
+    // اصطدام
     if (
         headX < 0 || headY < 0 ||
         headX >= canvas.width || headY >= canvas.height ||
@@ -176,7 +188,7 @@ function draw() {
     snake.unshift(newHead);
 }
 
-let game = setInterval(draw, 110);
+let game = setInterval(draw, 100);
 </script>
 
 </body>
