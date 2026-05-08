@@ -111,16 +111,16 @@ const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 const box = 25;
 
-/* صوت الأكل (بدون ملف خارجي) */
+/* صوت الأكل */
 function playEatSound(){
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     const osc = audioCtx.createOscillator();
     const gain = audioCtx.createGain();
 
     osc.type = "square";
-    osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+    osc.frequency.value = 600;
 
-    gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+    gain.gain.value = 0.1;
 
     osc.connect(gain);
     gain.connect(audioCtx.destination);
@@ -129,7 +129,7 @@ function playEatSound(){
     osc.stop(audioCtx.currentTime + 0.1);
 }
 
-/* أعلى نتيجة */
+/* High Score */
 let highScore = localStorage.getItem("snakeHighScore") || 0;
 document.getElementById("highscore").textContent = highScore;
 
@@ -163,34 +163,19 @@ function setDir(dir){
     if (dir === "DOWN" && direction !== "UP") nextDirection = "DOWN";
 }
 
-document.addEventListener("keydown", e => {
-    if (e.key === "ArrowLeft") setDir("LEFT");
-    if (e.key === "ArrowUp") setDir("UP");
-    if (e.key === "ArrowRight") setDir("RIGHT");
-    if (e.key === "ArrowDown") setDir("DOWN");
-});
-
-function drawSnake(){
-    snake.forEach((part, i) => {
-        ctx.fillStyle = i === 0 ? "#0f380f" : "#306230";
-        ctx.fillRect(part.x, part.y, box, box);
-
-        ctx.strokeStyle = "#9bbc0f";
-        ctx.strokeRect(part.x, part.y, box, box);
-    });
-}
-
+/* حركة + تصادم مضبوط */
 function draw(){
+
     direction = nextDirection;
 
     ctx.fillStyle = "#9bbc0f";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    drawSnake();
-
+    // رسم الأكل
     ctx.fillStyle = "#8b0000";
     ctx.fillRect(food.x, food.y, box, box);
 
+    // رأس الثعبان الحالي
     let headX = snake[0].x;
     let headY = snake[0].y;
 
@@ -199,19 +184,34 @@ function draw(){
     if (direction === "RIGHT") headX += box;
     if (direction === "DOWN") headY += box;
 
+    /* 🔥 إصلاح التصادم: يتم قبل إضافة الرأس */
+    let hitWall =
+        headX < 0 ||
+        headY < 0 ||
+        headX > canvas.width - box ||
+        headY > canvas.height - box;
+
+    let hitSelf = snake.some((p, i) => i !== 0 && p.x === headX && p.y === headY);
+
+    if (hitWall || hitSelf) {
+        clearInterval(game);
+        running = false;
+        alert("Game Over 😢");
+        return;
+    }
+
     /* الأكل */
     if (headX === food.x && headY === food.y) {
         score++;
         document.getElementById("score").textContent = score;
 
-        playEatSound(); // 🔊 صوت الأكل
+        playEatSound();
 
         food = {
             x: Math.floor(Math.random() * 20) * box,
             y: Math.floor(Math.random() * 20) * box
         };
 
-        /* تحديث أعلى نتيجة */
         if (score > highScore) {
             highScore = score;
             localStorage.setItem("snakeHighScore", highScore);
@@ -222,22 +222,17 @@ function draw(){
         snake.pop();
     }
 
-    let newHead = {x: headX, y: headY};
+    // إضافة الرأس بعد التحقق (هذا أهم إصلاح)
+    snake.unshift({x: headX, y: headY});
 
-    if (
-        headX < 0 || headY < 0 ||
-        headX >= canvas.width || headY >= canvas.height ||
-        snake.some((p, i) => i !== 0 && p.x === headX && p.y === headY)
-    ) {
-        clearInterval(game);
-        running = false;
-        alert("Game Over 😢");
-    }
-
-    snake.unshift(newHead);
+    // رسم الثعبان
+    snake.forEach((part, i) => {
+        ctx.fillStyle = i === 0 ? "#0f380f" : "#306230";
+        ctx.fillRect(part.x, part.y, box, box);
+    });
 }
 
-/* تشغيل / إيقاف */
+/* تشغيل */
 function toggleGame(){
     if (running) {
         clearInterval(game);
@@ -248,7 +243,7 @@ function toggleGame(){
     }
 }
 
-/* إعادة تشغيل */
+/* إعادة */
 function restartGame(){
     clearInterval(game);
     running = false;
@@ -257,7 +252,7 @@ function restartGame(){
     running = true;
 }
 
-/* بدء اللعبة */
+/* start */
 initGame();
 game = setInterval(draw, 100);
 running = true;
