@@ -35,6 +35,24 @@ canvas {
     box-shadow:0 0 25px #00ffe5;
 }
 
+.top-controls {
+    margin:10px 0;
+    display:flex;
+    gap:10px;
+}
+
+.top-controls button {
+    width:140px;
+    height:45px;
+    border:none;
+    border-radius:12px;
+    background:#111;
+    color:#00ffe5;
+    box-shadow:0 0 12px #00ffe5;
+    font-weight:bold;
+}
+
+/* الأسهم */
 .controls {
     margin-top:20px;
     display:grid;
@@ -53,14 +71,14 @@ canvas {
     touch-action:manipulation;
 }
 
-/* 🔥 شاشة Game Over نيون */
+/* 🔥 Game Over نيون احترافي */
 .gameover {
     position:fixed;
     top:0;
     left:0;
     width:100%;
     height:100%;
-    background:rgba(0,0,0,0.85);
+    background:rgba(0,0,0,0.9);
     display:none;
     flex-direction:column;
     align-items:center;
@@ -69,54 +87,99 @@ canvas {
 }
 
 .gameover h2 {
-    font-size:60px;
-    color:#ff003c;
-    text-shadow:0 0 15px #ff003c, 0 0 40px #ff003c;
-    animation:shake 0.6s infinite;
-    font-family:'Orbitron',sans-serif;
+    font-family:'Orbitron', sans-serif;
+    font-size:70px;
+    letter-spacing:8px;
+    color:#ff004c;
+
+    text-shadow:
+        0 0 5px #ff004c,
+        0 0 10px #ff004c,
+        0 0 20px #ff004c,
+        0 0 40px #ff004c,
+        0 0 80px #ff004c;
+
+    animation:neonFlicker 1.5s infinite alternate;
 }
 
 .gameover p {
     color:#00ffe5;
-    font-size:20px;
-    margin-top:10px;
+    font-size:18px;
+    margin-top:15px;
+    opacity:0.8;
 }
 
 .gameover button {
-    margin-top:20px;
-    padding:12px 25px;
+    margin-top:25px;
+    padding:12px 30px;
     font-size:18px;
     border:none;
     border-radius:10px;
     background:#00ffe5;
     color:#000;
     font-weight:bold;
-    box-shadow:0 0 20px #00ffe5;
+
+    box-shadow:
+        0 0 10px #00ffe5,
+        0 0 20px #00ffe5,
+        0 0 40px #00ffe5;
+
+    transition:0.2s;
 }
 
-/* تأثيرات */
+.gameover button:hover {
+    transform:scale(1.05);
+    box-shadow:
+        0 0 20px #00ffe5,
+        0 0 40px #00ffe5,
+        0 0 80px #00ffe5;
+}
+
 @keyframes fadeIn {
     from {opacity:0;}
     to {opacity:1;}
 }
 
-@keyframes shake {
-    0%{transform:translate(0);}
-    25%{transform:translate(2px,-2px);}
-    50%{transform:translate(-2px,2px);}
-    75%{transform:translate(2px,2px);}
-    100%{transform:translate(0);}
+@keyframes neonFlicker {
+    0% {
+        opacity:1;
+        text-shadow:
+            0 0 5px #ff004c,
+            0 0 15px #ff004c,
+            0 0 30px #ff004c,
+            0 0 60px #ff004c;
+    }
+    50% {
+        opacity:0.7;
+        text-shadow:
+            0 0 2px #ff004c,
+            0 0 8px #ff004c,
+            0 0 15px #ff004c;
+    }
+    100% {
+        opacity:1;
+        text-shadow:
+            0 0 10px #ff004c,
+            0 0 25px #ff004c,
+            0 0 50px #ff004c,
+            0 0 100px #ff004c;
+    }
 }
 </style>
 </head>
 
 <body>
 
-<h1>🐍 SNAKE NEON</h1>
+<h1>SNAKE NEON</h1>
 
 <div class="score">Score: <span id="score">0</span></div>
 <div class="highscore">High Score: <span id="highscore">0</span></div>
 <div class="level">Level: <span id="level">1</span></div>
+
+<div class="top-controls">
+    <button onclick="toggleGame()">⏯ تشغيل</button>
+    <button onclick="restartGame()">🔄 إعادة</button>
+</div>
 
 <canvas id="game" width="500" height="500"></canvas>
 
@@ -130,11 +193,11 @@ canvas {
     <button data-dir="RIGHT">▶</button>
 </div>
 
-<!-- 🔥 Game Over UI -->
+<!-- Game Over -->
 <div class="gameover" id="gameover">
     <h2>GAME OVER</h2>
-    <p>Try Again 💀</p>
-    <button onclick="restartGame()">🔄 إعادة اللعب</button>
+    <p>Try Again</p>
+    <button onclick="restartGame()">RESTART</button>
 </div>
 
 <script>
@@ -142,7 +205,7 @@ const canvas=document.getElementById("game");
 const ctx=canvas.getContext("2d");
 const box=25;
 
-/* التحكم */
+/* تحكم سريع */
 document.querySelectorAll("[data-dir]").forEach(btn=>{
     btn.addEventListener("pointerdown",e=>{
         setDir(btn.dataset.dir);
@@ -176,7 +239,7 @@ let game=null;
 let running=false;
 
 let level=1;
-let speed=140;
+let speed=120;
 const minSpeed=60;
 
 function initGame(){
@@ -190,7 +253,7 @@ function initGame(){
     nextDirection="RIGHT";
     score=0;
     level=1;
-    speed=140;
+    speed=120;
 
     document.getElementById("score").textContent=score;
     document.getElementById("level").textContent=level;
@@ -214,14 +277,15 @@ function showGameOver(){
     document.getElementById("gameover").style.display="flex";
 }
 
-/* مستوى */
+/* مراحل */
 function updateLevel(){
     let newLevel=Math.floor(score/5)+1;
+
     if(newLevel!==level){
         level=newLevel;
         document.getElementById("level").textContent=level;
 
-        speed=Math.max(minSpeed,140-level*10);
+        speed=Math.max(minSpeed,120-level*8);
 
         clearInterval(game);
         game=setInterval(draw,speed);
@@ -256,7 +320,7 @@ function draw(){
     if(hitWall||hitSelf){
         clearInterval(game);
         running=false;
-        showGameOver(); // 🔥 بدل alert
+        showGameOver();
         return;
     }
 
