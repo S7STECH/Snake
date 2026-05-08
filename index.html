@@ -2,14 +2,16 @@
 <html lang="ar">
 <head>
 <meta charset="UTF-8">
+
+<!-- 🔥 دعم الموبايل -->
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>SNAKE NEON</title>
+
+<title>GAME SNAKE</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600&display=swap" rel="stylesheet">
 
 <style>
 body {
-    margin:0;
     display:flex;
     flex-direction:column;
     align-items:center;
@@ -17,36 +19,61 @@ body {
     height:100vh;
     background:#0a0a0a;
     overflow:hidden;
-    touch-action:none;
+    touch-action:none; /* 🔥 منع السحب */
 }
 
 h1 {
     font-family:'Orbitron',sans-serif;
+    font-size:50px;
     color:#00ffe5;
     text-shadow:0 0 20px #00ffe5;
 }
 
+.score,.highscore,.level {
+    color:#fff;
+    font-size:18px;
+}
+
+/* 🔥 الكانفس مرن */
 canvas {
-    border:5px solid #00ffe5;
-    box-shadow:0 0 20px #00ffe5;
     background:#9bbc0f;
+    border:6px solid #00ffe5;
+    box-shadow:0 0 25px #00ffe5;
+}
+
+/* أزرار */
+.top-controls {
+    margin:10px 0;
+    display:flex;
+    gap:10px;
+}
+
+.top-controls button {
+    width:140px;
+    height:45px;
+    border:none;
+    border-radius:12px;
+    background:#111;
+    color:#00ffe5;
+    box-shadow:0 0 12px #00ffe5;
 }
 
 /* الأسهم */
 .controls {
-    margin-top:15px;
+    margin-top:20px;
     display:grid;
-    grid-template-columns:80px 80px 80px;
-    gap:8px;
+    grid-template-columns:90px 90px 90px;
+    gap:10px;
 }
 
 .controls button {
-    height:70px;
-    font-size:22px;
-    border-radius:12px;
+    height:85px;
+    font-size:28px;
+    border-radius:15px;
     border:2px solid #00ffe5;
     background:#111;
     color:#00ffe5;
+    box-shadow:0 0 12px #00ffe5;
     touch-action:manipulation;
 }
 
@@ -64,7 +91,8 @@ canvas {
 
 .gameover h2 {
     font-family:'Orbitron';
-    font-size:50px;
+    font-size:70px;
+    letter-spacing:8px;
     color:#ff004c;
     text-shadow:0 0 20px #ff004c,0 0 60px #ff004c;
 }
@@ -82,6 +110,15 @@ canvas {
 <body>
 
 <h1>SNAKE NEON</h1>
+
+<div class="score">Score: <span id="score">0</span></div>
+<div class="highscore">High Score: <span id="highscore">0</span></div>
+<div class="level">Level: <span id="level">1</span></div>
+
+<div class="top-controls">
+    <button onclick="toggleGame()">⏯ تشغيل</button>
+    <button onclick="restartGame()">🔄 إعادة</button>
+</div>
 
 <canvas id="game"></canvas>
 
@@ -104,7 +141,7 @@ canvas {
 const canvas=document.getElementById("game");
 const ctx=canvas.getContext("2d");
 
-/* 🔥 مقاس ديناميكي */
+/* 🔥 حجم مرن */
 function resizeCanvas(){
     let size=Math.min(window.innerWidth, window.innerHeight)*0.8;
     canvas.width=size;
@@ -115,18 +152,7 @@ window.addEventListener("resize",resizeCanvas);
 
 const box=25;
 
-let snake,direction,nextDirection,food;
-let game=null;
-
-/* 🔥 دعم الأزرار */
-document.querySelectorAll("[data-dir]").forEach(btn=>{
-    btn.addEventListener("pointerdown",e=>{
-        setDir(btn.dataset.dir);
-        e.preventDefault();
-    });
-});
-
-/* 🔥 دعم السحب (Swipe) */
+/* 🔥 Swipe */
 let startX=0,startY=0;
 
 canvas.addEventListener("touchstart",e=>{
@@ -139,37 +165,80 @@ canvas.addEventListener("touchend",e=>{
     let dy=e.changedTouches[0].clientY-startY;
 
     if(Math.abs(dx)>Math.abs(dy)){
-        if(dx>0) setDir("RIGHT");
+        if(dx>0)setDir("RIGHT");
         else setDir("LEFT");
     }else{
-        if(dy>0) setDir("DOWN");
+        if(dy>0)setDir("DOWN");
         else setDir("UP");
     }
 });
 
+/* 🔥 أزرار */
+document.querySelectorAll("[data-dir]").forEach(btn=>{
+    btn.addEventListener("pointerdown",e=>{
+        setDir(btn.dataset.dir);
+        e.preventDefault();
+    });
+});
+
 /* 🔥 كيبورد */
 document.addEventListener("keydown",e=>{
-    if(e.key==="ArrowLeft") setDir("LEFT");
-    if(e.key==="ArrowRight") setDir("RIGHT");
-    if(e.key==="ArrowUp") setDir("UP");
-    if(e.key==="ArrowDown") setDir("DOWN");
+    if(e.key==="ArrowLeft")setDir("LEFT");
+    if(e.key==="ArrowRight")setDir("RIGHT");
+    if(e.key==="ArrowUp")setDir("UP");
+    if(e.key==="ArrowDown")setDir("DOWN");
 });
+
+/* صوت */
+function playEatSound(){
+    const audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+    const osc=audioCtx.createOscillator();
+    const gain=audioCtx.createGain();
+
+    osc.type="square";
+    osc.frequency.value=600;
+    gain.gain.value=0.1;
+
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+
+    osc.start();
+    osc.stop(audioCtx.currentTime+0.1);
+}
+
+/* بيانات */
+let highScore=localStorage.getItem("snakeHighScore")||0;
+document.getElementById("highscore").textContent=highScore;
+
+let snake,direction,nextDirection,score,food;
+let game=null;
+let running=false;
+
+let level=1;
+let speed=120;
+const minSpeed=60;
 
 function initGame(){
     snake=[
-        {x:200,y:200},
-        {x:175,y:200},
-        {x:150,y:200}
+        {x:250,y:250},
+        {x:225,y:250},
+        {x:200,y:250}
     ];
+
     direction="RIGHT";
     nextDirection="RIGHT";
+    score=0;
+    level=1;
+    speed=120;
+
+    document.getElementById("score").textContent=score;
+    document.getElementById("level").textContent=level;
+    document.getElementById("gameover").style.display="none";
 
     food={
-        x:Math.floor(Math.random()*10)*box,
-        y:Math.floor(Math.random()*10)*box
+        x:Math.floor(Math.random()*20)*box,
+        y:Math.floor(Math.random()*20)*box
     };
-
-    document.getElementById("gameover").style.display="none";
 }
 
 function setDir(dir){
@@ -179,13 +248,26 @@ function setDir(dir){
     if(dir==="DOWN"&&direction!=="UP")nextDirection="DOWN";
 }
 
+function updateLevel(){
+    let newLevel=Math.floor(score/5)+1;
+    if(newLevel!==level){
+        level=newLevel;
+        document.getElementById("level").textContent=level;
+
+        speed=Math.max(minSpeed,120-level*8);
+
+        clearInterval(game);
+        game=setInterval(draw,speed);
+    }
+}
+
 function draw(){
     direction=nextDirection;
 
     ctx.fillStyle="#9bbc0f";
     ctx.fillRect(0,0,canvas.width,canvas.height);
 
-    ctx.fillStyle="red";
+    ctx.fillStyle="#8b0000";
     ctx.fillRect(food.x,food.y,box,box);
 
     let headX=snake[0].x;
@@ -196,41 +278,72 @@ function draw(){
     if(direction==="UP")headY-=box;
     if(direction==="DOWN")headY+=box;
 
-    if(
-        headX<0||headY<0||
-        headX>canvas.width-box||
-        headY>canvas.height-box
-    ){
+    let hitWall=headX<0||headY<0||headX>canvas.width-box||headY>canvas.height-box;
+    let hitSelf=snake.some((p,i)=>i!==0&&p.x===headX&&p.y===headY);
+
+    if(hitWall||hitSelf){
         clearInterval(game);
+        running=false;
         document.getElementById("gameover").style.display="flex";
         return;
     }
 
     if(headX===food.x&&headY===food.y){
+        score++;
+        document.getElementById("score").textContent=score;
+
+        playEatSound();
+
         food={
-            x:Math.floor(Math.random()*10)*box,
-            y:Math.floor(Math.random()*10)*box
+            x:Math.floor(Math.random()*20)*box,
+            y:Math.floor(Math.random()*20)*box
         };
+
+        if(score>highScore){
+            highScore=score;
+            localStorage.setItem("snakeHighScore",highScore);
+            document.getElementById("highscore").textContent=highScore;
+        }
+
+        updateLevel();
     }else{
         snake.pop();
     }
 
     snake.unshift({x:headX,y:headY});
 
-    snake.forEach(p=>{
-        ctx.fillStyle="#00ffe5";
-        ctx.fillRect(p.x,p.y,box,box);
+    snake.forEach((p,i)=>{
+        ctx.beginPath();
+        ctx.roundRect(p.x,p.y,box,box,6);
+        ctx.fillStyle=i===0?"#00ffe5":"#007a66";
+        ctx.shadowBlur=10;
+        ctx.shadowColor="#00ffe5";
+        ctx.fill();
+        ctx.shadowBlur=0;
+        ctx.stroke();
     });
+}
+
+function toggleGame(){
+    if(running){
+        clearInterval(game);
+        running=false;
+    }else{
+        game=setInterval(draw,speed);
+        running=true;
+    }
 }
 
 function restartGame(){
     clearInterval(game);
     initGame();
-    game=setInterval(draw,120);
+    game=setInterval(draw,speed);
+    running=true;
 }
 
 initGame();
-game=setInterval(draw,120);
+game=setInterval(draw,speed);
+running=true;
 
 </script>
 
