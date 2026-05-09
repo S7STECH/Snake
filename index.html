@@ -10,7 +10,6 @@
 
 <style>
 body {
-    margin:0;
     display:flex;
     flex-direction:column;
     align-items:center;
@@ -29,12 +28,14 @@ h1 {
 
 .score,.highscore,.level {
     color:#fff;
+    font-size:18px;
 }
 
+/* نفس شكلك القديم */
 canvas {
+    background:#9bbc0f;
     border:6px solid #00ffe5;
     box-shadow:0 0 20px #00ffe5;
-    background:#9bbc0f;
 }
 
 .top-controls {
@@ -43,6 +44,15 @@ canvas {
     gap:10px;
 }
 
+.top-controls button {
+    padding:10px 15px;
+    border:none;
+    border-radius:10px;
+    background:#111;
+    color:#00ffe5;
+}
+
+/* نفس الأسهم القديمة */
 .controls {
     margin-top:15px;
     display:grid;
@@ -50,9 +60,10 @@ canvas {
     gap:8px;
 }
 
-.controls button, .top-controls button {
-    height:50px;
-    border-radius:10px;
+.controls button {
+    height:70px;
+    font-size:22px;
+    border-radius:12px;
     border:2px solid #00ffe5;
     background:#111;
     color:#00ffe5;
@@ -76,14 +87,6 @@ canvas {
     color:#ff004c;
     text-shadow:0 0 20px #ff004c,0 0 60px #ff004c;
 }
-
-/* توقيع */
-.signature {
-    margin-top:10px;
-    color:#00ffe5;
-    font-family:'Orbitron';
-    text-shadow:0 0 10px #00ffe5;
-}
 </style>
 </head>
 
@@ -96,8 +99,8 @@ canvas {
 <div class="level">Level: <span id="level">1</span></div>
 
 <div class="top-controls">
-    <button onclick="toggleGame()">⏯</button>
-    <button onclick="restartGame()">🔄</button>
+    <button onclick="toggleGame()">⏯ تشغيل</button>
+    <button onclick="restartGame()">🔄 إعادة</button>
 </div>
 
 <canvas id="game"></canvas>
@@ -106,13 +109,10 @@ canvas {
     <div></div>
     <button data-dir="UP">▲</button>
     <div></div>
+
     <button data-dir="LEFT">◀</button>
     <button data-dir="DOWN">▼</button>
     <button data-dir="RIGHT">▶</button>
-</div>
-
-<div class="signature">
-تصميم حسين بن سعيد | s7s_tec
 </div>
 
 <div class="gameover" id="gameover">
@@ -126,7 +126,7 @@ const ctx=canvas.getContext("2d");
 
 const box=25;
 
-/* 🔥 ضبط المقاس */
+/* Responsive */
 function resizeCanvas(){
     let size=Math.min(window.innerWidth,window.innerHeight)*0.8;
     size=Math.floor(size/box)*box;
@@ -136,7 +136,7 @@ function resizeCanvas(){
 resizeCanvas();
 window.addEventListener("resize",resizeCanvas);
 
-/* تحكم */
+/* التحكم */
 document.querySelectorAll("[data-dir]").forEach(btn=>{
     btn.addEventListener("pointerdown",e=>{
         setDir(btn.dataset.dir);
@@ -186,11 +186,10 @@ function playEatSound(){
 let highScore=localStorage.getItem("snakeHighScore")||0;
 document.getElementById("highscore").textContent=highScore;
 
-let snake, direction, nextDirection, food, score;
+let snake,direction,nextDirection,food,score;
 let level=1;
 let speed=120;
 
-/* 🔥 إدارة التشغيل */
 let running=true;
 let animationId=null;
 let lastTime=0;
@@ -198,9 +197,9 @@ let lastTime=0;
 /* init */
 function initGame(){
     snake=[
-        {x:box*10,y:box*10},
-        {x:box*9,y:box*10},
-        {x:box*8,y:box*10}
+        {x:250,y:250},
+        {x:225,y:250},
+        {x:200,y:250}
     ];
 
     direction="RIGHT";
@@ -216,6 +215,7 @@ function initGame(){
     spawnFood();
 }
 
+/* أكل (تصحيح مهم) */
 function spawnFood(){
     let cols=canvas.width/box;
     let rows=canvas.height/box;
@@ -242,8 +242,8 @@ function updateLevel(){
     }
 }
 
-/* 🔥 Loop ثابت بدون تكرار */
-function gameLoop(time){
+/* 🔥 حل مشكلة التشغيل/الإيقاف */
+function loop(time){
     if(!running) return;
 
     if(time-lastTime>speed){
@@ -251,25 +251,24 @@ function gameLoop(time){
         lastTime=time;
     }
 
-    animationId=requestAnimationFrame(gameLoop);
+    animationId=requestAnimationFrame(loop);
 }
 
-function startLoop(){
+function start(){
     if(animationId) cancelAnimationFrame(animationId);
-    animationId=requestAnimationFrame(gameLoop);
+    animationId=requestAnimationFrame(loop);
 }
 
-/* الرسم */
+/* رسم (نفس شكلك القديم) */
 function draw(){
     direction=nextDirection;
 
     ctx.fillStyle="#9bbc0f";
     ctx.fillRect(0,0,canvas.width,canvas.height);
 
-    ctx.fillStyle="#ff003c";
-    ctx.beginPath();
-    ctx.arc(food.x+box/2, food.y+box/2, box/2-3, 0, Math.PI*2);
-    ctx.fill();
+    /* الأكل مثل كودك الأصلي */
+    ctx.fillStyle="#8b0000";
+    ctx.fillRect(food.x,food.y,box,box);
 
     let headX=snake[0].x;
     let headY=snake[0].y;
@@ -279,8 +278,10 @@ function draw(){
     if(direction==="UP")headY-=box;
     if(direction==="DOWN")headY+=box;
 
-    if(headX<0||headY<0||headX>=canvas.width||headY>=canvas.height||
-       snake.some((p,i)=>i!==0&&p.x===headX&&p.y===headY)){
+    let hitWall=headX<0||headY<0||headX>=canvas.width||headY>=canvas.height;
+    let hitSelf=snake.some((p,i)=>i!==0&&p.x===headX&&p.y===headY);
+
+    if(hitWall||hitSelf){
         running=false;
         cancelAnimationFrame(animationId);
         document.getElementById("gameover").style.display="flex";
@@ -306,34 +307,29 @@ function draw(){
 
     snake.unshift({x:headX,y:headY});
 
+    /* 🐍 نفس شكل الثعبان القديم */
     snake.forEach((p,i)=>{
         ctx.fillStyle=i===0?"#00ffe5":"#007a66";
         ctx.fillRect(p.x,p.y,box,box);
     });
 }
 
-/* تشغيل/إيقاف */
+/* أزرار */
 function toggleGame(){
     running=!running;
-    if(running){
-        startLoop();
-    }else{
-        cancelAnimationFrame(animationId);
-    }
+    if(running) start();
 }
 
-/* إعادة */
 function restartGame(){
     cancelAnimationFrame(animationId);
     initGame();
     running=true;
-    startLoop();
+    start();
 }
 
-/* بداية */
+/* تشغيل أول مرة */
 initGame();
-startLoop();
-
+start();
 </script>
 
 </body>
